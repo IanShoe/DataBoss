@@ -13,9 +13,7 @@ import java.util.Collection;
 
 /**
  * POJO properties must follow java naming conventions (mixedCase) for
- * reflection to work *NOTE* Extend from a base class SQLDatabaseObject and
- * throw SQL common stuff in there so that it's easier to interchange with
- * different databases
+ * reflection to work
  *
  * @author shoemaki
  */
