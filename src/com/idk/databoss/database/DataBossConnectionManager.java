@@ -17,6 +17,8 @@ import java.util.logging.Logger;
 
 /**
  * Singleton Manager used to connect to databases. Needs connection pooling.
+ * *NOTE* Currently, this is more of a postgres connection manager. The select,
+ * update, insert, and delete methods should be abstract
  *
  * @author shoemaki
  */

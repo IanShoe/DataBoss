@@ -20,6 +20,7 @@ import java.util.Collection;
 public abstract class DataBossObject {
 
     protected Collection<DataBossRepresenter> dbRetrievableItems = new ArrayList<DataBossRepresenter>();
+    //Maybe make a mapping instead of 4 collections with the key being how a field relates
     protected Collection<Object> columns;
     protected Collection<Object> values;
     protected Collection<Object> joinColumns;
@@ -29,7 +30,7 @@ public abstract class DataBossObject {
     public DataBossObject() {
         //Ensure all DataBossObjects call their setDBRetrievableItems by always 
         //Calling this.super(); A better way would be a startup annotation, but 
-        //depending on what type of server determines startup procedures
+        //depending on implementation style and type of server determines startup procedures
         this.setDBRetrievableItems();
     }
 
