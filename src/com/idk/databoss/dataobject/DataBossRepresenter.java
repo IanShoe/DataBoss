@@ -14,21 +14,21 @@ package com.idk.databoss.dataobject;
 public class DataBossRepresenter {
 
     public String key;
-    public DatabaseType type;
+    public DataBossType type;
     public String joinTable = null;
 
-    public DataBossRepresenter(String key, DatabaseType type) {
+    public DataBossRepresenter(String key, DataBossType type) {
         this.key = key;
         this.type = type;
     }
 
-    public DataBossRepresenter(String key, DatabaseType type, Class joinClass) {
+    public DataBossRepresenter(String key, DataBossType type, Class joinClass) {
         this.key = key;
         this.type = type;
         this.joinTable = joinClass.getSimpleName();
     }
 
-    public enum DatabaseType {
+    public enum DataBossType {
 
         ID, Optional, Join, Required, PartialRequired;
         // partial required would be if a table requires 1 of 2 or more attributes

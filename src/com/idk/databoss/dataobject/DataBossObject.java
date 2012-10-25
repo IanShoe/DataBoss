@@ -133,7 +133,7 @@ public abstract class DataBossObject {
     public boolean isValid() {
         for (DataBossRepresenter item : dbRetrievableItems) {
             Object checker;
-            if (item.type == DataBossRepresenter.DatabaseType.Required) {
+            if (item.type == DataBossRepresenter.DataBossType.Required) {
                 try {
                     //Add any other validation here
                     checker = ReflectionUtils.getProperty(this, item.key);

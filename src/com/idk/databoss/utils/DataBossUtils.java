@@ -93,10 +93,10 @@ public class DataBossUtils {
         for (Iterator<DataBossRepresenter> it = dataBossObject.getDbRetrievableItems().iterator(); it.hasNext();) {
             DataBossRepresenter item = it.next();
             StringBuilder column = new StringBuilder();
-            if (item.type == DataBossRepresenter.DatabaseType.Required || item.type == DataBossRepresenter.DatabaseType.ID || item.type == DataBossRepresenter.DatabaseType.Optional) {
+            if (item.type == DataBossRepresenter.DataBossType.Required || item.type == DataBossRepresenter.DataBossType.ID || item.type == DataBossRepresenter.DataBossType.Optional) {
                 column.append(dataBossObject.getClass().getSimpleName()).append(".").append(FormatUtils.formatUpperToUnderscore(item.key));
                 columns.add(column.toString());
-            } else if (item.type == DataBossRepresenter.DatabaseType.Join) {
+            } else if (item.type == DataBossRepresenter.DataBossType.Join) {
                 column.append(item.joinTable).append(".").append(FormatUtils.formatUpperToUnderscore(item.key));
                 columns.add(column.toString());
                 column.append("=").append(item.joinTable).append(".").append(FormatUtils.formatUpperToUnderscore(item.key));
@@ -127,10 +127,10 @@ public class DataBossUtils {
         for (Iterator<DataBossRepresenter> it = dataBossObject.getDbRetrievableItems().iterator(); it.hasNext();) {
             DataBossRepresenter item = it.next();
             Object checker;
-            if (item.type == DataBossRepresenter.DatabaseType.ID) {
+            if (item.type == DataBossRepresenter.DataBossType.ID) {
                 //Never insert IDs
                 continue;
-            } else if (item.type == DataBossRepresenter.DatabaseType.Required) {
+            } else if (item.type == DataBossRepresenter.DataBossType.Required) {
                 checker = ReflectionUtils.getProperty(dataBossObject, item.key);
                 if (checker != null) {
                     values.add(checker);
@@ -138,8 +138,8 @@ public class DataBossUtils {
                 } else {
                     // If a required field fails, blow up the insert.
                     throw new IllegalRequiredAttribute("Required attribute " + item.key + " was not found.");
-                }// || item.type == DataBossRepresenter.DatabaseType.JoinID
-            } else if (item.type == DataBossRepresenter.DatabaseType.Optional) {
+                }// || item.type == DataBossRepresenter.DataBossType.JoinID
+            } else if (item.type == DataBossRepresenter.DataBossType.Optional) {
                 checker = ReflectionUtils.getProperty(dataBossObject, item.key);
                 if (checker != null) {
                     values.add(checker);
@@ -175,7 +175,7 @@ public class DataBossUtils {
                 Object value = rs.getObject(FormatUtils.formatUpperToUnderscore(item.key));
                 if (value != null) {
                     ReflectionUtils.setProperty(result, item.key, value);
-                } else if (item.type == DataBossRepresenter.DatabaseType.Required) {
+                } else if (item.type == DataBossRepresenter.DataBossType.Required) {
                     //Could not set a required field.
                     throw new IllegalRequiredAttribute("Required attribute " + item.key + " was not found.");
                 }
