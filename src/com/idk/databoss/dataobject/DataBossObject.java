@@ -6,7 +6,7 @@ package com.idk.databoss.dataobject;
 
 import com.idk.databoss.exception.IllegalRequiredAttribute;
 import com.idk.databoss.utils.DataBossUtils;
-import ian.utils.ReflectionUtils;
+import com.idk.utils.ReflectionUtils;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -20,10 +20,9 @@ import java.util.Collection;
 public abstract class DataBossObject {
 
     protected Collection<DataBossRepresenter> dbRetrievableItems = new ArrayList<DataBossRepresenter>();
-    //Maybe make a mapping instead of 4 collections with the key being how a field relates
+    //Maybe make a mapping instead of 3 collections with the key being how a field relates
     protected Collection<Object> columns;
     protected Collection<Object> values;
-    protected Collection<Object> joinColumns;
     protected Collection<Object> joinTables;
     protected String joinLink;
 
@@ -48,14 +47,6 @@ public abstract class DataBossObject {
 
     public void setValues(Collection<Object> values) {
         this.values = values;
-    }
-
-    public Collection<Object> getJoinColumns() {
-        return this.joinColumns;
-    }
-
-    public void setJoinColumns(Collection<Object> joinColumns) {
-        this.joinColumns = joinColumns;
     }
 
     public Collection<Object> getJoinTables() {

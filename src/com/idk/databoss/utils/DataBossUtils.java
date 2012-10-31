@@ -7,8 +7,10 @@ package com.idk.databoss.utils;
 import com.idk.databoss.dataobject.DataBossObject;
 import com.idk.databoss.dataobject.DataBossRepresenter;
 import com.idk.databoss.exception.IllegalRequiredAttribute;
-import ian.utils.FormatUtils;
-import ian.utils.ReflectionUtils;
+import com.idk.exception.FieldNotFoundException;
+import com.idk.exception.FieldSetException;
+import com.idk.utils.FormatUtils;
+import com.idk.utils.ReflectionUtils;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -18,7 +20,7 @@ import java.util.Iterator;
 
 //******NOTE********
 //95% of this is already genericly setup, but I have it tailored to a
-//database format I created. Somehow, I need to interupt the flows of the preps
+//database format I created. Somehow, I need to interupt the flows of the prepare methods
 //so that they reflect the database type
 //******NOTE********
 /**
@@ -89,27 +91,23 @@ public class DataBossUtils {
     public static void prepareSelect(DataBossObject dataBossObject) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException, IllegalRequiredAttribute {
         Collection<Object> columns = new ArrayList<Object>();
         Collection<Object> joinTables = new ArrayList<Object>();
-        Collection<Object> joinColumns = new ArrayList<Object>();
         for (Iterator<DataBossRepresenter> it = dataBossObject.getDbRetrievableItems().iterator(); it.hasNext();) {
             DataBossRepresenter item = it.next();
             StringBuilder column = new StringBuilder();
             if (item.type == DataBossRepresenter.DataBossType.Required || item.type == DataBossRepresenter.DataBossType.ID || item.type == DataBossRepresenter.DataBossType.Optional) {
-                column.append(dataBossObject.getClass().getSimpleName()).append(".").append(FormatUtils.formatUpperToUnderscore(item.key));
+                column.append(dataBossObject.getClass().getSimpleName()).append(".").append(FormatUtils.formatSmartAllUpperToUnderscore(item.key));
                 columns.add(column.toString());
             } else if (item.type == DataBossRepresenter.DataBossType.Join) {
-                column.append(item.joinTable).append(".").append(FormatUtils.formatUpperToUnderscore(item.key));
+                column.append(item.joinTable).append(".").append(FormatUtils.formatSmartAllUpperToUnderscore(item.key));
                 columns.add(column.toString());
-                column.append("=").append(item.joinTable).append(".").append(FormatUtils.formatUpperToUnderscore(item.key));
-                joinColumns.add(column.toString());
+                column.append("=").append(item.joinTable).append(".").append(FormatUtils.formatSmartAllUpperToUnderscore(item.key));
                 if (!joinTables.contains(item.joinTable)) {
                     joinTables.add((item.joinTable));
                 }
-
             }
         }
         dataBossObject.setColumns(columns);
         dataBossObject.setJoinTables(joinTables);
-        dataBossObject.setJoinColumns(joinColumns);
     }
 
     /**
@@ -128,26 +126,46 @@ public class DataBossUtils {
             DataBossRepresenter item = it.next();
             Object checker;
             if (item.type == DataBossRepresenter.DataBossType.ID) {
-                //Never insert IDs
-                continue;
+                try {
+                    checker = ReflectionUtils.getProperty(dataBossObject, item.key);
+                    if (checker != null) { // probably unnecessary now with
+                        // FieldNotFoundException
+                        values.add(checker);
+                        columns.add(FormatUtils.formatSmartAllUpperToUnderscore(item.key));
+                    } else {
+                        // Postgres server may have default values for ID so
+                        // continue with insert
+                    }
+                } catch (FieldNotFoundException ex) {
+                    // Postgres server may have default values for ID so
+                    // continue with insert
+                }
             } else if (item.type == DataBossRepresenter.DataBossType.Required) {
-                checker = ReflectionUtils.getProperty(dataBossObject, item.key);
-                if (checker != null) {
-                    values.add(checker);
-                    columns.add(FormatUtils.formatUpperToUnderscore(item.key));
-                } else {
+                try {
+                    checker = ReflectionUtils.getProperty(dataBossObject, item.key);
+                    if (checker != null) { // probably unnecessary now with
+                        // FieldNotFoundException
+                        values.add(checker);
+                        columns.add(FormatUtils.formatSmartAllUpperToUnderscore(item.key));
+                    } else {
+                    }
+                } catch (FieldNotFoundException ex) {
                     // If a required field fails, blow up the insert.
                     throw new IllegalRequiredAttribute("Required attribute " + item.key + " was not found.");
-                }// || item.type == DataBossRepresenter.DataBossType.JoinID
-            } else if (item.type == DataBossRepresenter.DataBossType.Optional) {
-                checker = ReflectionUtils.getProperty(dataBossObject, item.key);
-                if (checker != null) {
-                    values.add(checker);
-                    columns.add(FormatUtils.formatUpperToUnderscore(item.key));
                 }
-                //If an optional field fails, don't blow up the insert. 
-            }
 
+            } else if (item.type == DataBossRepresenter.DataBossType.Optional) {
+                try {
+                    checker = ReflectionUtils.getProperty(dataBossObject, item.key);
+                    if (checker != null) { // probably unnecessary now with
+                        // FieldNotFoundException
+                        values.add(checker);
+                        columns.add(FormatUtils.formatSmartAllUpperToUnderscore(item.key));
+                    }
+                } catch (FieldNotFoundException e) {
+                    // If an optional field fails, don't blow up the insert.
+                }
+            }
         }
         dataBossObject.setColumns(columns);
         dataBossObject.setValues(values);
@@ -172,12 +190,20 @@ public class DataBossUtils {
             DataBossObject result = (DataBossObject) clazz.newInstance();
             for (Iterator<DataBossRepresenter> it = result.getDbRetrievableItems().iterator(); it.hasNext();) {
                 DataBossRepresenter item = it.next();
-                Object value = rs.getObject(FormatUtils.formatUpperToUnderscore(item.key));
+                Object value = rs.getObject(FormatUtils.formatSmartAllUpperToUnderscore(item.key));
                 if (value != null) {
-                    ReflectionUtils.setProperty(result, item.key, value);
+                    try {
+                        ReflectionUtils.setProperty(result, item.key, value);
+                    } catch (FieldSetException e) {
+                        if (item.type == DataBossRepresenter.DataBossType.Required) {
+                            throw new IllegalRequiredAttribute("Could not set property " + item.key + " with value " + value);
+                        } else {
+                            // not a required field so don't blow it up
+                        }
+                    }
                 } else if (item.type == DataBossRepresenter.DataBossType.Required) {
-                    //Could not set a required field.
-                    throw new IllegalRequiredAttribute("Required attribute " + item.key + " was not found.");
+                    // Could not set a required field.
+                    throw new IllegalRequiredAttribute("Required attribute " + item.key + " was not found in database.");
                 }
             }
             results.add(result);
