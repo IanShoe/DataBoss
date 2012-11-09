@@ -4,6 +4,8 @@
  */
 package com.idk.databoss.utils;
 
+import com.idk.databoss.annotation.DataBossColumn;
+import com.idk.databoss.annotation.DataBossTable;
 import com.idk.databoss.dataobject.DataBossObject;
 import com.idk.databoss.dataobject.DataBossRepresenter;
 import com.idk.databoss.exception.IllegalRequiredAttribute;
@@ -11,6 +13,7 @@ import com.idk.exception.FieldNotFoundException;
 import com.idk.exception.FieldSetException;
 import com.idk.utils.FormatUtils;
 import com.idk.utils.ReflectionUtils;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -209,5 +212,44 @@ public class DataBossUtils {
             results.add(result);
         }
         return results;
+    }
+
+    public static String buildGenericSelectQuery(Object baseObject) {
+        StringBuilder sb = new StringBuilder("SELECT ");
+        DataBossTable tableAnnotation = baseObject.getClass().getAnnotation(DataBossTable.class);
+        String tableShortHand;
+        String databaseTableName;
+
+        // Determine table annotations
+        if (tableAnnotation == null) {
+            return sb.toString();
+        } else {
+            tableShortHand = tableAnnotation.tableShortHand();
+            if ("default".equals(tableAnnotation.databaseTableName())) {
+                databaseTableName = FormatUtils.formatSmartAllUpperToUnderscore(baseObject.getClass().getSimpleName());
+            } else {
+                databaseTableName = tableAnnotation.databaseTableName();
+            }
+        }
+        boolean first = true;
+        for (Field field : baseObject.getClass().getDeclaredFields()) {
+            if (field.getAnnotation(DataBossColumn.class) != null) {
+                DataBossColumn columnAnnotation = (DataBossColumn) field.getAnnotation(DataBossColumn.class);
+                if (columnAnnotation.select()) {
+                    String columnName = columnAnnotation.databaseColumnName();
+                    if ("default".equals(columnName)) {
+                        columnName = FormatUtils.formatSmartAllUpperToUnderscore(field.getName());
+                    }
+                    if (!first) {
+                        sb.append(", ").append(tableShortHand).append(".").append(columnName);
+                    } else {
+                        sb.append(tableShortHand).append(".").append(columnName);
+                        first = false;
+                    }
+                }
+            }
+        }
+        sb.append(" FROM ").append(databaseTableName).append(" ").append(tableShortHand);
+        return sb.toString();
     }
 }
