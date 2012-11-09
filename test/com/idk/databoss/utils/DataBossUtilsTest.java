@@ -163,20 +163,49 @@ public class DataBossUtilsTest {
 
         String fullObjectSelect = DataBossUtils.buildGenericSelectQuery(fullObject);
         String fullObjectExpected = "SELECT tdbo.my_id, tdbo.their_id, tdbo.cool_int, tdbo.my_string FROM test_data_boss_object tdbo";
-        System.out.println("FullObject generic select:\n " + fullObjectSelect);
+//        System.out.println("FullObject generic select:\n " + fullObjectSelect);
         assertEquals(fullObjectExpected, fullObjectSelect);
 
         // Test something that has select off
         String partialObjectSelect = DataBossUtils.buildGenericSelectQuery(partialObject);
         String partialObjectExpected = "SELECT tdboj.my_id, tdboj.my_string FROM test_data_boss_object_join tdboj";
+//        System.out.println("\nPartialObject generic select: (Testing an object with a select field off)\n " + partialObjectSelect);
         assertEquals(partialObjectExpected, partialObjectSelect);
-        System.out.println("\nPartialObject generic select: (Testing an object with a select field off)\n " + partialObjectSelect);
 
         // Test something that doesn't have the annotations
         String emptySelect = DataBossUtils.buildGenericSelectQuery(new Object());
         String emptyExpected = "SELECT ";
+//        System.out.println("\nEmpty generic select: (Testing an object without annotations)\n " + emptySelect);
         assertEquals(emptyExpected, emptySelect);
-        System.out.println("\nEmpty generic select: (Testing an object without annotations)\n " + emptySelect);
+
+    }
+
+    /**
+     * Test of buildGenericInsertQuery method, of class DataBossUtils.
+     */
+    @Test
+    public void testBuildGenericInsertQuery() {
+        System.out.println("buildGenericInserttQuery\n");
+        TestDataBossObject fullObject = new TestDataBossObject();
+        TestDataBossObjectJoin partialObject = new TestDataBossObjectJoin();
+
+        String fullObjectInsert = DataBossUtils.buildGenericInsertQuery(fullObject);
+        String fullObjectExpected = "INSERT INTO test_data_boss_object (my_id, their_id, cool_int, my_string) VALUES ( :my_id, :their_id, :cool_int, :my_string)";
+//	System.out.println("TransactionLog generic insert:\n " + fullObjectInsert);
+        assertEquals(fullObjectExpected, fullObjectInsert);
+
+        // Test something that has insert off
+        String partialObjectInsert = DataBossUtils.buildGenericInsertQuery(partialObject);
+        String partialObjectExpected = "INSERT INTO test_data_boss_object_join (my_id, my_string) VALUES ( :my_id, :my_string)";
+//        System.out.println("\nPartialObject generic insert: (Testing an object with an insert field off)\n " + partialObjectInsert);
+        assertEquals(partialObjectExpected, partialObjectInsert);
+
+
+        // Test something that doesn't have the annotations
+        String emptyInsert = DataBossUtils.buildGenericInsertQuery(new Object());
+        String emptyExpected = "INSERT INTO ";
+//        System.out.println("\nEmpty generic insert: (Testing an object without annotations)\n " + emptyInsert);
+        assertEquals(emptyExpected, emptyInsert);
     }
 
     @DataBossTable(tableShortHand = "tdbo")
@@ -257,7 +286,7 @@ public class DataBossUtilsTest {
         private int myId;
         @DataBossColumn
         private String myString;
-        @DataBossColumn(select = false)
+        @DataBossColumn(select = false, insert = false)
         private Collection<Object> myObjects = new ArrayList<Object>();
 
         public int getMyId() {

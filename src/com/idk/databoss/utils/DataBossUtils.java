@@ -214,6 +214,16 @@ public class DataBossUtils {
         return results;
     }
 
+// IDEA! if we create a string container object that holds the different parts of a 
+// query as multiple strings and then return that object, we'll have more flexibility.
+// This way we can keep each part open and tack on manual stuff.
+    /**
+     * This method generates the generic portion of a select query from the base
+     * object
+     *
+     * @param baseObject base object to create select query from
+     * @return select query
+     */
     public static String buildGenericSelectQuery(Object baseObject) {
         StringBuilder sb = new StringBuilder("SELECT ");
         DataBossTable tableAnnotation = baseObject.getClass().getAnnotation(DataBossTable.class);
@@ -251,5 +261,52 @@ public class DataBossUtils {
         }
         sb.append(" FROM ").append(databaseTableName).append(" ").append(tableShortHand);
         return sb.toString();
+    }
+
+    /**
+     * This method generates the generic portion of an insert query from the
+     * base object
+     *
+     * @param baseObject base object to create insert query from
+     * @return insert query
+     */
+    public static String buildGenericInsertQuery(Object baseObject) {
+        StringBuilder sbInsert = new StringBuilder("INSERT INTO ");
+        StringBuilder sbValue = new StringBuilder(" VALUES ( ");
+        DataBossTable tableAnnotation = baseObject.getClass().getAnnotation(DataBossTable.class);
+
+        // Determine table annotations
+        if (tableAnnotation == null) {
+            return sbInsert.toString();
+        } else {
+            if ("default".equals(tableAnnotation.databaseTableName())) {
+                sbInsert.append(FormatUtils.formatSmartAllUpperToUnderscore(baseObject.getClass().getSimpleName())).append(" ");
+            } else {
+                sbInsert.append(tableAnnotation.databaseTableName());
+            }
+        }
+        boolean first = true;
+        for (Field field : baseObject.getClass().getDeclaredFields()) {
+            if (field.getAnnotation(DataBossColumn.class) != null) {
+                DataBossColumn columnAnnotation = (DataBossColumn) field.getAnnotation(DataBossColumn.class);
+                if (columnAnnotation.insert() == true) {
+                    String columnName = columnAnnotation.databaseColumnName();
+                    if ("default".equals(columnName)) {
+                        columnName = FormatUtils.formatSmartAllUpperToUnderscore(field.getName());
+                    }
+                    if (!first) {
+                        sbInsert.append(", ").append(columnName);
+                        sbValue.append(", :").append(columnName);
+                    } else {
+                        sbInsert.append("(").append(columnName);
+                        sbValue.append(":").append(columnName);
+                        first = false;
+                    }
+                }
+            }
+        }
+        sbValue.append(")");
+        sbInsert.append(")").append(sbValue.toString());
+        return sbInsert.toString();
     }
 }
