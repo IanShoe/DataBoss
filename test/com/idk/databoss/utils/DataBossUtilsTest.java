@@ -10,11 +10,11 @@ import com.idk.databoss.dataobject.DataBossObject;
 import com.idk.databoss.dataobject.DataBossRepresenter;
 import com.idk.databoss.exception.IllegalRequiredAttribute;
 import java.lang.reflect.InvocationTargetException;
-import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Collection;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import org.junit.*;
-import static org.junit.Assert.*;
 
 /**
  *
