@@ -7,12 +7,11 @@ import java.lang.annotation.Target;
 
 /**
  * this annotation will be used to help build sql statements
- * and mappers via reflection. It can only be placed on classes.
+ * via reflection. It can only be placed on classes.
  * The annotation determines the databaseTableName and possibly other
  * options in the future.
  *
  * @author shoemaki
- *
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
@@ -28,6 +27,7 @@ public @interface DataBossTable {
 
     /**
      * Shorthand of table name for queries.
+     *
      * @return Shorthand String
      */
     public String tableShortHand();
