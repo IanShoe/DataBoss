@@ -24,6 +24,12 @@ public @interface DataBossColumn {
 
     public boolean delete() default true;
 
+    public boolean id() default false;
+    
+    public boolean required() default false;
+    
+    public String join() default "defaultNo";
+
     public String resultSetMethod() default "getString";
 
     public String databaseColumnName() default "default";

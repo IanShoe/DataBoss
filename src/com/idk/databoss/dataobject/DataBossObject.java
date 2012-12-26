@@ -4,12 +4,16 @@
  */
 package com.idk.databoss.dataobject;
 
-import com.idk.databoss.exception.IllegalRequiredAttribute;
+import com.ctc.databoss.query.QueryContainer;
+import com.idk.annotation.ReflectionIgnore;
+import com.idk.databoss.annotation.DataBossColumn;
+import com.idk.databoss.annotation.DataBossTable;
+import com.idk.databoss.database.DataBossConnectionManager;
 import com.idk.databoss.utils.DataBossUtils;
-import com.idk.utils.ReflectionUtils;
-import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.Collection;
+import com.idk.object.ExtendedField;
+import com.idk.utils.FormatUtils;
+import java.lang.reflect.Field;
+import java.sql.SQLException;
 
 /**
  * POJO properties must follow java naming conventions (mixedCase) for
@@ -19,100 +23,44 @@ import java.util.Collection;
  */
 public abstract class DataBossObject {
 
-    protected Collection<DataBossRepresenter> dbRetrievableItems = new ArrayList<DataBossRepresenter>();
-    //Maybe make a mapping instead of 3 collections with the key being how a field relates
-    protected Collection<Object> columns;
-    protected Collection<Object> values;
-    protected Collection<Object> joinTables;
-    protected String joinLink;
+    @ReflectionIgnore
+    private String databaseTableName;
+    @ReflectionIgnore
+    private QueryContainer container;
+    @ReflectionIgnore
+    private static DataBossConnectionManager connectionManager = new DataBossConnectionManager();
 
     public DataBossObject() {
-        //Ensure all DataBossObjects call their setDBRetrievableItems by always 
-        //Calling this.super(); A better way would be a startup annotation, but 
-        //depending on implementation style and type of server determines startup procedures
-        this.setDBRetrievableItems();
-    }
-
-    public Collection<Object> getColumns() {
-        return this.columns;
-    }
-
-    public void setColumns(Collection<Object> columns) {
-        this.columns = columns;
-    }
-
-    public Collection<Object> getValues() {
-        return this.values;
-    }
-
-    public void setValues(Collection<Object> values) {
-        this.values = values;
-    }
-
-    public Collection<Object> getJoinTables() {
-        return this.joinTables;
-    }
-
-    public void setJoinTables(Collection<Object> joinTables) {
-        this.joinTables = joinTables;
-    }
-
-    public Collection<DataBossRepresenter> getDbRetrievableItems() {
-        return this.dbRetrievableItems;
-    }
-
-    protected abstract void setDBRetrievableItems();
-
-    /**
-     * Method to generate delete string. (Not fully implemented)
-     *
-     * @return delete string
-     */
-    public String createDeleteQuery() {
-        StringBuilder query = new StringBuilder().append("DELETE FROM ").append(this.getClass().getSimpleName());
-        return query.toString();
-    }
-
-    /**
-     * Method to generate insert string. Will always call an item's
-     * prepareInsert method
-     *
-     * @return insert string
-     * @throws IllegalAccessException
-     * @throws InvocationTargetException
-     * @throws NoSuchMethodException
-     * @throws IllegalRequiredAttribute
-     */
-    public String createInsertQuery() throws IllegalAccessException, InvocationTargetException, NoSuchMethodException, IllegalRequiredAttribute {
-        DataBossUtils.prepareInsert(this);
-        StringBuilder query = new StringBuilder().append("INSERT INTO ").append(this.getClass().getSimpleName()).append(" (").append(DataBossUtils.addColumnsAsString(columns)).append(")").append(" VALUES ").append(DataBossUtils.addValuesAsString(values));
-        return query.toString();
-    }
-
-    /**
-     * Method to generate select string. Will always call an item's
-     * prepareSelect method
-     *
-     * @return select query
-     * @throws IllegalAccessException
-     * @throws InvocationTargetException
-     * @throws NoSuchMethodException
-     * @throws IllegalRequiredAttribute
-     */
-    public String createSelectQuery() throws IllegalAccessException, InvocationTargetException, NoSuchMethodException, IllegalRequiredAttribute {
-        DataBossUtils.prepareSelect(this);
-        StringBuilder query = new StringBuilder();
-
-        if (!this.joinTables.isEmpty()) {
-            query.append("SELECT ").append(DataBossUtils.addColumnsAsString(columns)).append(" FROM ").append(this.getClass().getSimpleName()).append(" INNER JOIN ").append(DataBossUtils.addColumnsAsString(joinTables)).append(" ").append("ON ").append(this.joinLink);
+        DataBossTable tableAnnotation = this.getClass().getAnnotation(DataBossTable.class);
+        if (tableAnnotation == null) {
+            throw new RuntimeException("Required annotation DataBossTable not found for class " + this.getClass().getSimpleName() + ". DataBoss Objects require the use of @DataBossTable annotation to link the object to the table.");
         } else {
-            query.append("SELECT ").append(DataBossUtils.addColumnsAsString(columns)).append(" FROM ").append(this.getClass().getSimpleName());
+            if ("default".equals(tableAnnotation.databaseTableName())) {
+                databaseTableName = FormatUtils.formatSmartAllUpperToUnderscore(this.getClass().getSimpleName());
+            } else {
+                databaseTableName = tableAnnotation.databaseTableName();
+            }
         }
-        return query.toString();
+        //Maybe make a Query Manager that maintains a list of which objects have already been created and use that as a flag
+        this.constructQueryContainer();
     }
 
-    public String createUpdateQuery() {
-        return "not implemented yet";
+    public void delete() {
+        //TODO
+    }
+
+    public void save() throws SQLException, IllegalAccessException {
+        constructInsertQuery();
+        System.out.println(container.buildSave());
+        connectionManager.update(container.buildSave());
+    }
+
+    public void select() {
+        //TODO
+    }
+
+    public void update() {
+        //TODO
     }
 
     /**
@@ -122,20 +70,130 @@ public abstract class DataBossObject {
      * @return if a DataBossObject is valid for insert
      */
     public boolean isValid() {
-        for (DataBossRepresenter item : dbRetrievableItems) {
-            Object checker;
-            if (item.type == DataBossRepresenter.DataBossType.Required) {
-                try {
-                    //Add any other validation here
-                    checker = ReflectionUtils.getProperty(this, item.key);
-                    if ("".equals(checker.toString()) || checker == null) {
-                        return false;
-                    }
-                } catch (Exception ex) {
-                    return false;
+//        for (DataBossRepresenter item : dbRetrievableItems) {
+//            Object checker;
+//            if (item.type == DataBossRepresenter.DataBossType.Required) {
+//                try {
+//                    //Add any other validation here
+//                    checker = ReflectionUtils.getProperty(this, item.key);
+//                    if ("".equals(checker.toString()) || checker == null) {
+//                        return false;
+//                    }
+//                } catch (Exception ex) {
+//                    return false;
+//                }
+//            }
+//        }
+        return true;
+    }
+
+    /**
+     * Initialization method for queryContainer.
+     * Currently handles from, select
+     *
+     */
+    private void constructQueryContainer() {
+        DataBossTable thisTableAnnotation = this.getClass().getAnnotation(DataBossTable.class);
+        String thisShortHand = thisTableAnnotation.tableShortHand();
+
+        StringBuilder deleteBuilder = new StringBuilder("DELETE ");
+        StringBuilder fromBuilder = new StringBuilder("FROM ").append(this.databaseTableName).append(" ").append(thisShortHand);
+        StringBuilder innerJoinBuilder = new StringBuilder("INNER JOIN ");
+        StringBuilder outerBuilder = new StringBuilder("OUTER JOIN ");
+        StringBuilder selectBuilder = new StringBuilder("SELECT ");
+        StringBuilder updateBuilder = new StringBuilder("UPDATE ");
+        StringBuilder whereBuilder = new StringBuilder("WHERE ");
+        StringBuilder listBuilder = new StringBuilder();
+
+        boolean first = true;
+        for (ExtendedField extendedField : DataBossUtils.extendedGetAllDataBossFields(this)) {
+            DataBossObject dataBossObject = (DataBossObject) extendedField.getObject();
+            DataBossTable tableAnnotation = (DataBossTable) dataBossObject.getClass().getAnnotation(DataBossTable.class);
+            Field field = extendedField.getField();
+            field.setAccessible(true);
+            DataBossColumn columnAnnotation = (DataBossColumn) field.getAnnotation(DataBossColumn.class);
+            if (columnAnnotation.select()) {
+                String columnName = columnAnnotation.databaseColumnName();
+                if (columnName.equals("default")) {
+                    columnName = FormatUtils.formatSmartAllUpperToUnderscore(field.getName());
+                } else if (columnName.equals("defaultName")) {
+                    columnName = FormatUtils.formatSmartAllUpperToUnderscore(field.getType().getSimpleName()) + "_name";
+                } else if (columnName.equals("defaultId")) {
+                    columnName = FormatUtils.formatSmartAllUpperToUnderscore(field.getType().getSimpleName()) + "_id";
+                }
+                if (!first) {
+                    listBuilder.append(", ").append(tableAnnotation.tableShortHand()).append(".").append(columnName);
+                } else {
+                    listBuilder.append(tableAnnotation.tableShortHand()).append(".").append(columnName);
+                    first = false;
                 }
             }
         }
-        return true;
+        selectBuilder.append(listBuilder.toString());
+        container = new QueryContainer(
+                deleteBuilder.toString(),
+                fromBuilder.toString(),
+                innerJoinBuilder.toString(),
+                listBuilder.toString(),
+                outerBuilder.toString(),
+                selectBuilder.toString(),
+                updateBuilder.toString(),
+                whereBuilder.toString());
+    }
+
+//      StringBuilder sb = new StringBuilder(selectContainer.getSelect());
+//	sb.append(", mvd.mvd_id, mvd.mvd_ip, mvd.mvd_serial_number, mvd.mvd_name, mvd.mvd_configuration_id, ");
+//	sb.append("lc.location_code_id, lc.location_code_name, ");
+//	sb.append("sc.scan_category_id, sc.scan_category_name, ");
+//	sb.append("c.card_id, c.card_expiration_date, c.fascn, c.valid, c.uuid, c.full_name, c.ca_issuer, ");
+//	sb.append("e.event_id, e.event_name, e.event_description, ");
+//	sb.append(" mo.username, mo.mvd_operator_id, mo.pin ");
+//	sb.append(selectContainer.getFrom());
+//	sb.append(" LEFT OUTER JOIN  mvd mvd ON mvd.mvd_id = tl.mvd_id ");
+//	sb.append(" LEFT OUTER JOIN location_code lc ON lc.location_code_id = tl.location_code_id ");
+//	sb.append(" LEFT OUTER JOIN scan_category sc ON sc.scan_category_id = tl.scan_category_id ");
+//	sb.append(" LEFT OUTER JOIN card c ON c.card_id = tl.card_id ");
+//	sb.append(" LEFT OUTER JOIN event e ON e.event_id = tl.event_id ");
+//	sb.append(" LEFT OUTER JOIN mvd_operator_linker mol ON mol.mvd_operator_id = tl.mvd_operator_id ");
+//	sb.append(" LEFT OUTER JOIN mvd_operator mo ON mo.mvd_operator_id = mol.mvd_operator_id ");
+//	sb.append(" ORDER BY e.event_name, tl.start_time ");
+    /**
+     * This method generates the generic portion of an insert query from a
+     * DataBossObject
+     *
+     * @param baseObject base object to create insert query from
+     */
+    private void constructInsertQuery() throws IllegalAccessException {
+        StringBuilder insertBuilder = new StringBuilder("INSERT INTO ").append(this.databaseTableName).append(" (");
+        StringBuilder valueBuilder = new StringBuilder("VALUES (");
+        boolean first = true;
+        for (ExtendedField extendedField : DataBossUtils.extendedGetAllDataBossFields(this)) {
+            DataBossObject dataBossObject = (DataBossObject) extendedField.getObject();
+            Field field = extendedField.getField();
+            field.setAccessible(true);
+            DataBossColumn columnAnnotation = (DataBossColumn) field.getAnnotation(DataBossColumn.class);
+            if (columnAnnotation.select()) {
+                String columnName = columnAnnotation.databaseColumnName();
+                if (columnName.equals("default")) {
+                    columnName = FormatUtils.formatSmartAllUpperToUnderscore(field.getName());
+                } else if (columnName.equals("defaultName")) {
+                    columnName = FormatUtils.formatSmartAllUpperToUnderscore(field.getType().getSimpleName()) + "_name";
+                } else if (columnName.equals("defaultId")) {
+                    columnName = FormatUtils.formatSmartAllUpperToUnderscore(field.getType().getSimpleName()) + "_id";
+                }
+                if (!first) {
+                    insertBuilder.append(", ").append(columnName);
+                    valueBuilder.append(", ").append(DataBossUtils.addValueAsString(field.get(extendedField.getObject())));
+                } else {
+                    insertBuilder.append(columnName);
+                    valueBuilder.append(DataBossUtils.addValueAsString(field.get(extendedField.getObject())));
+                    first = false;
+                }
+            }
+        }
+        insertBuilder.append(") ");
+        valueBuilder.append(" ) ");
+        container.setInsert(insertBuilder.toString());
+        container.setValue(valueBuilder.toString());
     }
 }

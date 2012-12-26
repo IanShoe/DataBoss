@@ -27,6 +27,7 @@ public @interface DataBossTable {
 
     /**
      * Shorthand of table name for queries.
+     * TODO: make this optional
      *
      * @return Shorthand String
      */
