@@ -8,8 +8,7 @@ import com.idk.databoss.testobjects.TestDataBossObject;
 import com.idk.object.ExtendedField;
 import java.util.ArrayList;
 import java.util.Collection;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import org.junit.Test;
 
 /**
@@ -51,18 +50,25 @@ public class DataBossUtilsTest {
         Collection<ExtendedField> fields = DataBossUtils.extendedGetAllDataBossFields(tdbo);
         Collection<String> fieldNames = new ArrayList();
         fieldNames.add("myId");
-        fieldNames.add("myString");
         fieldNames.add("theirId");
         fieldNames.add("coolInt");
-        fieldNames.add("extension");
+        fieldNames.add("myString");
         fieldNames.add("nester");
+        fieldNames.add("extension");
+        fieldNames.add("id");
+        fieldNames.add("nesterString");
+        fieldNames.add("id");
         assertTrue(fields.size() == fieldNames.size());
         for (ExtendedField field : fields) {
             assertTrue(fieldNames.contains(field.getField().getName()));
-            if ("myId".equals(field.getField().getName()) || "theirId".equals(field.getField().getName()) || "coolInt".equals(field.getField().getName()) || "myString".equals(field.getField().getName()) || "extension".equals(field.getField().getName())) {
+            if ("nester".equals(field.getField().getName()) || "myId".equals(field.getField().getName()) || "theirId".equals(field.getField().getName()) || "coolInt".equals(field.getField().getName()) || "myString".equals(field.getField().getName()) || "extension".equals(field.getField().getName())) {
                 assertTrue(field.getObject().equals(tdbo));
-            } else if ("nester".equals(field.getField().getName())) {
+            } else if ("nesterString".equals(field.getField().getName())) {
                 assertTrue(field.getObject().equals(tdbo.getNester()));
+            } else if ("id".equals(field.getField().getName())) {
+                assertTrue(field.getObject().equals(tdbo) || field.getObject().equals(tdbo.getNester()));
+            } else {
+                fail();
             }
         }
     }

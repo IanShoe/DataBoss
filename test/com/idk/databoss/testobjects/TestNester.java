@@ -16,15 +16,15 @@ import com.idk.databoss.dataobject.DataBossObject;
 public class TestNester extends DataBossObject {
 
     @DataBossColumn
-    private String nester = "nester";
+    private String nesterString = "nesterString";
     private String nestedOmit = "nestOmit";
 
-    public String getNester() {
-        return nester;
+    public String getNesterString() {
+        return nesterString;
     }
 
-    public void setNester(String nester) {
-        this.nester = nester;
+    public void setNesterString(String nesterString) {
+        this.nesterString = nesterString;
     }
 
     public String getNestedOmit() {
