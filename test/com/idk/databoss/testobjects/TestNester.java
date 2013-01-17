@@ -12,7 +12,7 @@ import com.idk.databoss.dataobject.DataBossObject;
  *
  * @author shoemaki
  */
-@DataBossTable(tableShortHand = "tn")
+@DataBossTable(shorthand= "tn")
 public class TestNester extends DataBossObject {
 
     @DataBossColumn

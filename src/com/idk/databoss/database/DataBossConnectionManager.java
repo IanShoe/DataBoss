@@ -36,10 +36,6 @@ public class DataBossConnectionManager {
 
     private void setupConnection() {
         
-        String test = DataBossConnector.INSTANCE.getProperty("test");
-        if(test.equals("true")){
-            return;
-        }
         String url = DataBossConnector.INSTANCE.getProperty("url");
         Properties props = new Properties();
         props.setProperty("user", DataBossConnector.INSTANCE.getProperty("user"));

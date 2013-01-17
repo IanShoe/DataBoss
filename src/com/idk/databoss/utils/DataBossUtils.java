@@ -75,11 +75,24 @@ public class DataBossUtils {
      */
     public static String addValueAsString(Object item) {
         StringBuilder valueBuilder = new StringBuilder();
+        if (item == null) {
+            return "";
+        }
         if (item.getClass() == Integer.class) {
             return valueBuilder.append(item).toString();
         } else {
             return valueBuilder.append("'").append(item.toString()).append("'").toString();
         }
+    }
+
+    public static Collection<Field> getDataBossFields(Class<? extends DataBossObject> clazz) {
+        Collection<Field> fields = new CopyOnWriteArrayList<Field>(ReflectionUtils.getPrimitiveFields(clazz));
+        for (Field field : fields) {
+            if (field.getAnnotation(DataBossColumn.class) == null) {
+                fields.remove(field);
+            }
+        }
+        return fields;
     }
 
     public static Collection<Field> getAllDataBossFields(Class<? extends DataBossObject> clazz) {
@@ -92,8 +105,18 @@ public class DataBossUtils {
         return fields;
     }
 
+    public static Collection<ExtendedField> extendedGetDataBossFields(DataBossObject baseObject) {
+        Collection<ExtendedField> extendedFields = new CopyOnWriteArrayList<ExtendedField>(ReflectionUtils.extendedGetAllClassFields(baseObject));
+        for (ExtendedField extendedField : extendedFields) {
+            if (extendedField.getField().getAnnotation(DataBossColumn.class) == null) {
+                extendedFields.remove(extendedField);
+            }
+        }
+        return extendedFields;
+    }
+
     public static Collection<ExtendedField> extendedGetAllDataBossFields(DataBossObject baseObject) {
-        Collection<ExtendedField> extendedFields = new CopyOnWriteArrayList<ExtendedField>(ReflectionUtils.extendedGetAllPrimitiveFields(baseObject));
+        Collection<ExtendedField> extendedFields = new CopyOnWriteArrayList<ExtendedField>(ReflectionUtils.extendedGetAllFields(baseObject));
         for (ExtendedField extendedField : extendedFields) {
             if (extendedField.getField().getAnnotation(DataBossColumn.class) == null) {
                 extendedFields.remove(extendedField);

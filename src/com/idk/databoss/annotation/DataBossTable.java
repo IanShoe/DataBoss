@@ -31,5 +31,5 @@ public @interface DataBossTable {
      *
      * @return Shorthand String
      */
-    public String tableShortHand();
+    public String shorthand();
 }

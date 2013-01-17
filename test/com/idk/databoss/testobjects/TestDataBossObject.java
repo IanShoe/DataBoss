@@ -13,7 +13,7 @@ import java.util.Collection;
  *
  * @author shoemaki
  */
-@DataBossTable(tableShortHand = "tdbo")
+@DataBossTable(shorthand= "tdbo")
 public class TestDataBossObject extends TestExtension {
 
     @DataBossColumn
@@ -25,7 +25,7 @@ public class TestDataBossObject extends TestExtension {
     @DataBossColumn
     private String myString = "string";
     @DataBossColumn
-    private TestNester nester;
+    private TestNester nester = new TestNester(); // INNER JOIN this guy?
     private String ommited = "omit";
     private Collection<Object> myObjects = new ArrayList<Object>();
 

@@ -117,9 +117,13 @@ public class QueryContainer {
     public void setWhere(String where) {
         this.where = where;
     }
-    
-    public String buildSave(){
+
+    public String buildInsert() {
+        return this.insert + " " + this.value;
+    }
+
+    public String buildSelect() {
         //TODO: figure out where and joins
-        return this.select + " " + this.from;
+        return this.select + " " + this.from + " " + this.innerJoin;
     }
 }

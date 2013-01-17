@@ -14,7 +14,7 @@ import java.util.Collection;
  *
  * @author shoemaki
  */
-@DataBossTable(tableShortHand = "tdboj")
+@DataBossTable(shorthand= "tdboj")
 public class TestDataBossObjectJoin extends DataBossObject {
 
     public TestDataBossObjectJoin() {
