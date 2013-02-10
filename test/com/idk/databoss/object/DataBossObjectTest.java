@@ -49,4 +49,16 @@ public class DataBossObjectTest {
             Logger.getLogger(DataBossObjectTest.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
+    
+    /**
+     * Test of save method, of class DataBossObject.
+     */
+    @Test
+    public void testSelect() {
+        try {
+            ian.select();
+        } catch (Exception ex) {
+            Logger.getLogger(DataBossObjectTest.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
 }

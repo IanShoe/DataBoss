@@ -9,6 +9,10 @@ import com.idk.databoss.dataobject.DataBossObject;
 import com.idk.object.ExtendedField;
 import com.idk.utils.ReflectionUtils;
 import java.lang.reflect.Field;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -124,6 +128,7 @@ public class DataBossUtils {
         }
         return extendedFields;
     }
+
     /**
      * Sets select columns and join tables of a dataBossObject. This method will
      * determine if an attribute is from a joining table and add appropriately
@@ -231,30 +236,34 @@ public class DataBossUtils {
      * @throws InvocationTargetException
      * @throws NoSuchMethodException
      */
-//    public static Collection<DataBossObject> createDataBossObjects(Class<? extends DataBossObject> clazz, ResultSet rs) throws InstantiationException, IllegalAccessException, SQLException, InvocationTargetException, NoSuchMethodException, IllegalRequiredAttribute {
-//        Collection<DataBossObject> results = new ArrayList<DataBossObject>();
-//        while (rs.next()) {
-//            DataBossObject result = (DataBossObject) clazz.newInstance();
-//            for (Iterator<DataBossRepresenter> it = result.getDbRetrievableItems().iterator(); it.hasNext();) {
-//                DataBossRepresenter item = it.next();
-//                Object value = rs.getObject(FormatUtils.formatSmartAllUpperToUnderscore(item.key));
-//                if (value != null) {
-//                    try {
-//                        ReflectionUtils.setProperty(result, item.key, value);
-//                    } catch (FieldNotFoundException e) {
-//                        if (item.type == DataBossRepresenter.DataBossType.Required) {
-//                            throw new IllegalRequiredAttribute("Could not set property " + item.key + " with value " + value);
-//                        } else {
-//                            // not a required field so don't blow it up
-//                        }
-//                    }
-//                } else if (item.type == DataBossRepresenter.DataBossType.Required) {
-//                    // Could not set a required field.
-//                    throw new IllegalRequiredAttribute("Required attribute " + item.key + " was not found in database.");
-//                }
-//            }
-//            results.add(result);
-//        }
-//        return results;
-//    }
+    public static Collection<DataBossObject> createDataBossObjects(Class<? extends DataBossObject> clazz, ResultSet rs) throws InstantiationException, IllegalAccessException, SQLException {
+        Collection<DataBossObject> results = new ArrayList<DataBossObject>();
+        while (rs.next()) {
+            DataBossObject result = (DataBossObject) clazz.newInstance();
+            Collection<ExtendedField> exFields = DataBossUtils.extendedGetAllDataBossFields(result);
+            for (ExtendedField field : DataBossUtils.extendedGetAllDataBossFields(result)) {
+            //            for (Iterator<DataBossRepresenter> it = result.getDbRetrievableItems().iterator(); it.hasNext();) {
+            //                DataBossRepresenter item = it.next();
+            //                Object value = rs.getObject(FormatUtils.formatSmartAllUpperToUnderscore(item.key));
+            //                if (value != null) {
+            //                    try {
+            //                        ReflectionUtils.setProperty(result, item.key, value);
+            //                    } catch (FieldNotFoundException e) {
+            //                        if (item.type == DataBossRepresenter.DataBossType.Required) {
+            //                            throw new IllegalRequiredAttribute("Could not set property " + item.key + " with value " + value);
+            //                        } else {
+            //                            // not a required field so don't blow it up
+            //                        }
+            //                    }
+            //                } else if (item.type == DataBossRepresenter.DataBossType.Required) {
+            //                    // Could not set a required field.
+            //                    throw new IllegalRequiredAttribute("Required attribute " + item.key + " was not found in database.");
+            //                }
+            //            }
+            
+                results.add(result);
+            }
+        }
+        return results;
+    }
 }

@@ -14,7 +14,9 @@ import com.idk.databoss.utils.DataBossUtils;
 import com.idk.object.ExtendedField;
 import com.idk.utils.FormatUtils;
 import java.lang.reflect.Field;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -27,7 +29,7 @@ import java.util.logging.Logger;
  */
 public abstract class DataBossObject {
 
-    @DataBossColumn
+    @DataBossColumn(databaseColumnName= "defaultId")
     @ReflectionIgnore
     protected UUID id = UUID.randomUUID();
     @ReflectionIgnore
@@ -81,7 +83,14 @@ public abstract class DataBossObject {
     }
 
     public void select() {
-        //TODO
+        try {
+            prepareDataBossObject();
+            ResultSet rs = connectionManager.select(container.buildSelect());
+            Collection<DataBossObject> objects = DataBossUtils.createDataBossObjects(this.getClass(), rs);
+        } catch (Exception ex) {
+            Logger.getLogger(DataBossObject.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
     }
 
     public void update() {
@@ -152,7 +161,7 @@ public abstract class DataBossObject {
                         innerJoinBuilder.append(dbo.databaseTableName).append(" ").append(tA.shorthand());
                         innerJoinBuilder.append(" ON ");
                         innerJoinBuilder.append(tableAnnotation.shorthand()).append(".").append(dbo.databaseTableName).append("_id=");
-                        innerJoinBuilder.append(tA.shorthand()).append(".id ");
+                        innerJoinBuilder.append(tA.shorthand()).append(".").append(dbo.databaseTableName).append("_id ");
                     } catch (Exception ex) {
                         Logger.getLogger(DataBossObject.class.getName()).log(Level.SEVERE, null, ex);
                         throw new DataBossException(ex.getMessage());
@@ -161,9 +170,9 @@ public abstract class DataBossObject {
                     if (columnName.equals("default")) {
                         columnName = FormatUtils.formatSmartAllUpperToUnderscore(field.getName());
                     } else if (columnName.equals("defaultName")) {
-                        columnName = FormatUtils.formatSmartAllUpperToUnderscore(field.getType().getSimpleName()) + "_name";
+                        columnName = FormatUtils.formatSmartAllUpperToUnderscore(extendedField.getObject().getClass().getSimpleName()) + "_name";
                     } else if (columnName.equals("defaultId")) {
-                        columnName = FormatUtils.formatSmartAllUpperToUnderscore(field.getType().getSimpleName()) + "_id";
+                        columnName = FormatUtils.formatSmartAllUpperToUnderscore(extendedField.getObject().getClass().getSimpleName()) + "_id";
                     }
                     if (!first) {
                         listBuilder.append(", ").append(tableAnnotation.shorthand()).append(".").append(columnName);
@@ -240,9 +249,9 @@ public abstract class DataBossObject {
                         if (columnName.equals("default")) {
                             columnName = FormatUtils.formatSmartAllUpperToUnderscore(field.getName());
                         } else if (columnName.equals("defaultName")) {
-                            columnName = FormatUtils.formatSmartAllUpperToUnderscore(field.getType().getSimpleName()) + "_name";
+                            columnName = FormatUtils.formatSmartAllUpperToUnderscore(extendedField.getObject().getClass().getSimpleName()) + "_name";
                         } else if (columnName.equals("defaultId")) {
-                            columnName = FormatUtils.formatSmartAllUpperToUnderscore(field.getType().getSimpleName()) + "_id";
+                            columnName = FormatUtils.formatSmartAllUpperToUnderscore(extendedField.getObject().getClass().getSimpleName()) + "_id";
                         }
 
                         if (!first) {
