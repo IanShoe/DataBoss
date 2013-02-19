@@ -2,7 +2,7 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.ctc.databoss.query;
+package com.idk.databoss.query;
 
 /**
  * Container to facilitate Query building using the reflective system

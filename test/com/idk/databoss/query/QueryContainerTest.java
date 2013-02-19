@@ -4,7 +4,6 @@
  */
 package com.idk.databoss.query;
 
-import com.ctc.databoss.query.QueryContainer;
 import com.idk.databoss.exception.DataBossException;
 import com.idk.databoss.object.DataBossObjectTest;
 import com.idk.databoss.testobjects.Person;

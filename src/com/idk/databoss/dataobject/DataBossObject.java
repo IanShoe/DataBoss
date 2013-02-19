@@ -4,7 +4,7 @@
  */
 package com.idk.databoss.dataobject;
 
-import com.ctc.databoss.query.QueryContainer;
+import com.idk.databoss.query.QueryContainer;
 import com.idk.annotation.ReflectionIgnore;
 import com.idk.databoss.annotation.DataBossColumn;
 import com.idk.databoss.annotation.DataBossTable;
